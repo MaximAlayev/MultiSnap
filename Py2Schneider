@@ -5,9 +5,121 @@ import os
 import time
 import serial
 
-class fix(object):
-    def _init_(Self):
-        pass
+def updateFirstCom():
+    port1 = firstPort_send.get()
+    par = serial.PARITY_NONE
+    speed = firstSpeed_send.get()
+    if (firstParity_send.get().upper() == "ODD"):
+        par = serial.PARITY_ODD
+    if (firstParity_send.get().upper() == "EVEN"):
+        par = serial.PARITY_EVEN
+    if (firstParity_send.get().upper() == "MARK"):
+        par = serial.PARITY_MARK
+    if (firstParity_send.get().upper() == "SPACE"):
+        par = serial.PARITY_SPACE
+    stop = serial.STOPBITS_ONE
+    #if (firstStop_send.get().upper() == "ONE 5"):
+    #    ???
+    if (firstStop_send.get().upper() == "TWO"):
+        stop = serial.STOPBITS_TWO
+    data = serial.EIGHTBITS
+    if (firstData_send.get().upper() == "FIVE"):
+        data = serial.FIVEBITS
+    if (firstData_send.get().upper() == "SIX"):
+        data = serial.SIXBITS
+    if (firstData_send.get().upper() == "SEVEN"):
+        data = serial.SEVENBITS
+
+    firstPort_entry.delete(0, END)
+    firstPort_entry.insert(END, port1)
+    firstSpeed_entry.delete(0, END)
+    firstSpeed_entry.insert(END, speed)
+    firstParity_entry.delete(0, END)
+    firstParity_entry.insert(END, par)
+    firstData_entry.delete(0, END)
+    firstData_entry.insert(END, data)
+
+    ser1 = serial.Serial(
+    	port= "COM" + port1,
+    	baudrate=int(speed),
+    	parity= par,
+    	stopbits= stop,
+    	bytesize= data
+    )
+    ser1.open()
+    ser1.isOpen()
+
+
+
+def configureFirst():
+    global screen2
+
+    screen2 = Toplevel(screen)
+    screen2.title("Configure First COM")
+    screen2.geometry("300x500")
+    Label(screen2, text = "Configure the First COM").pack()
+
+    portSettings = Frame(screen2)
+    portSettings.pack(side = LEFT)
+
+    global firstPort_send
+    global firstPort_entry
+    firstPort_send = StringVar()
+    firstPort_entry = StringVar()
+    Label(portSettings, text = "Port: ").pack()
+    firstPort_entry = Entry(portSettings, textvariable = firstPort_send)
+    firstPort_entry.insert(END, port1)
+    firstPort_entry.pack()
+
+    global firstSpeed_send
+    global firstSpeed_entry
+    firstSpeed_send = StringVar()
+    firstSpeed_entry = StringVar()
+    Label(portSettings, text = "Speed: ").pack()
+    firstSpeed_entry = Entry(portSettings, textvariable = firstSpeed_send)
+    firstSpeed_entry.delete(0, END)
+    firstSpeed_entry.insert(END, speed)
+    firstSpeed_entry.pack()
+
+    global firstData_send
+    global firstData_entry
+    firstData_send = StringVar()
+    firstData_entry = StringVar()
+    Label(portSettings, text = "Data bits: ").pack()
+    firstData_entry = Entry(portSettings, textvariable = firstData_send)
+    firstData_entry.insert(END, data)
+    firstData_entry.pack()
+
+    global firstStop_send
+    global firstStop_entry
+    firstStop_send = StringVar()
+    firstStop_entry = StringVar()
+    Label(portSettings, text = "Stop bits: ").pack()
+    firstStop_entry = Entry(portSettings, textvariable = firstStop_send)
+    firstStop_entry.insert(END, stop)
+    firstStop_entry.pack()
+
+    global firstFlow_send
+    global firstFlow_entry
+    firstFlow_send = StringVar()
+    firstFlow_entry = StringVar()
+    Label(portSettings, text = "Flow control: ").pack()
+    firstFlow_entry = Entry(portSettings, textvariable = firstFlow_send)
+    firstFlow_entry.insert(END, 'None')
+    firstFlow_entry.pack()
+
+    global firstParity_send
+    global firstParity_entry
+    firstParity_send = StringVar()
+    firstParity_entry = StringVar()
+    Label(portSettings, text = "Parity bits: ").pack()
+    firstParity_entry = Entry(portSettings, textvariable = firstParity_send)
+    firstParity_entry.insert(END, par)
+    firstParity_entry.pack()
+
+    Label(portSettings, text = "").pack()
+    Button(portSettings, text = "OK", width = 30, height = 1, command = updateFirstCom).pack()
+
 
 def writeOutput(output, theFrame):
     charInLine = 20
@@ -15,6 +127,10 @@ def writeOutput(output, theFrame):
     for i in range(0, parts):
         print(parts)
         Label(theFrame, text = ">>" + output[(i*charInLine):(i*charInLine + charInLine)], width = 20).pack(side = BOTTOM)
+
+class fix(object):
+    def _init_(Self):
+        pass
 
 class ScrollableFrame(ttk.Frame, fix):
     def __init__(self, container, *args, **kwargs):
@@ -37,18 +153,31 @@ class ScrollableFrame(ttk.Frame, fix):
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
+
 def outputSetup():
     global firstOutput
-    firstOutput = ScrollableFrame(frame4)
-    firstOutput.pack(side = LEFT)
+    global firstFrame
+    firstFrame = Frame(frame4)
+    firstFrame.pack(side = LEFT)
+    firstOutput = ScrollableFrame(firstFrame)
+    firstOutput.pack(side = BOTTOM)
+    Button(firstFrame, text = "Configure", width = 20, command = configureFirst).pack(side = BOTTOM)
 
     global secondOutput
-    secondOutput = ScrollableFrame(frame4)
-    secondOutput.pack(side = LEFT)
+    global secondFrame
+    secondFrame = Frame(frame4)
+    secondFrame.pack(side = LEFT)
+    secondOutput = ScrollableFrame(secondFrame)
+    secondOutput.pack(side = BOTTOM)
+    Button(secondFrame, text = "Configure", width = 20).pack(side = BOTTOM)
 
     global thirdOutput
-    thirdOutput = ScrollableFrame(frame4)
-    thirdOutput.pack(side = LEFT)
+    global thirdFrame
+    thirdFrame = Frame(frame4)
+    thirdFrame.pack(side = LEFT)
+    thirdOutput = ScrollableFrame(thirdFrame)
+    thirdOutput.pack(side = BOTTOM)
+    Button(thirdFrame, text = "Configure", width = 20).pack(side = BOTTOM)
 
 def comportDisplayLabels():
     Label(frame2, text = "ComPort1: " + comPort1, width = 20).pack(side = LEFT)
@@ -132,8 +261,6 @@ def send_to_all():
     ttk.Label(secondOutput.scrollable_frame, text = "Command: " + command + "_B", width = 20).pack(side = TOP)
     ttk.Label(thirdOutput.scrollable_frame, text = "Command: " + command + "_C", width = 20).pack(side = TOP)
 
-
-
     ser1.write(command + "_A" + '\r\n')
     out = ''
 
@@ -165,7 +292,7 @@ def main_screen():
     global first
     global screen
     screen = Tk()
-    screen.geometry("600x500")
+    screen.geometry("1000x600")
     screen.title("Schneider 1.0")
     Label(text = "Schneider 1.0", bg = "grey", width = "600", height = "2", font = ("Calibri", 13)).pack()
     Label(text = "").pack()
@@ -196,6 +323,7 @@ def main_screen():
     frame2.pack()
     frame3 = Frame(screen)
     frame3.pack()
+    configureButtonFrame = Frame(screen)
     frame4 = Frame(screen)
     frame4.pack()
 
@@ -231,6 +359,25 @@ def main_screen():
     Button(frame3, text="Update ComPort2", width = 20, height = 1, command = updateComPort2).pack(side = LEFT)
     Button(frame3, text="Update ComPort3", width = 20, height = 1, command = updateComPort3).pack(side = LEFT)
 
+    global par1
+    global par2
+    global par3
+    global data1
+    global data2
+    global data3
+    global stop1
+    global stop2
+    global stop3
+    global speed1
+    global speed2
+    global speed3
+    global port1
+    global port2
+    global port3
+    par = "None"
+    data = "Eight"
+    stop = "One"
+    speed = 9600
     outputSetup()
 
     '''
