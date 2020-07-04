@@ -5,6 +5,30 @@ import os
 import time
 import serial
 
+class fix(object):
+    def _init_(Self):
+        pass
+
+class ScrollableFrame(ttk.Frame, fix):
+    def __init__(self, container, *args, **kwargs):
+        super(ScrollableFrame, self).__init__(container, *args, **kwargs)
+        canvas = tk.Canvas(self)
+        scrollbar = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
+        self.scrollable_frame = ttk.Frame(canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+
+        canvas.create_window((200, 0), window=self.scrollable_frame, anchor="nw")
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
 def updateFirstCom():
     port1 = firstPort_send.get()
     par = serial.PARITY_NONE
@@ -20,16 +44,17 @@ def updateFirstCom():
     stop = serial.STOPBITS_ONE
     #if (firstStop_send.get().upper() == "ONE 5"):
     #    ???
-    if (firstStop_send.get().upper() == "TWO"):
+    if (firstStop_send.get().upper() == "TWO" or firstStop_send.get() == 2):
         stop = serial.STOPBITS_TWO
     data = serial.EIGHTBITS
-    if (firstData_send.get().upper() == "FIVE"):
+    if (firstData_send.get().upper() == "FIVE" or firstData_send.get() == 5):
         data = serial.FIVEBITS
-    if (firstData_send.get().upper() == "SIX"):
+    if (firstData_send.get().upper() == "SIX" or firstData_send.get() == 6):
         data = serial.SIXBITS
-    if (firstData_send.get().upper() == "SEVEN"):
+    if (firstData_send.get().upper() == "SEVEN" or firstData_send.get() == 7):
         data = serial.SEVENBITS
 
+    """
     firstPort_entry.delete(0, END)
     firstPort_entry.insert(END, port1)
     firstSpeed_entry.delete(0, END)
@@ -38,6 +63,7 @@ def updateFirstCom():
     firstParity_entry.insert(END, par)
     firstData_entry.delete(0, END)
     firstData_entry.insert(END, data)
+    """
 
     ser1 = serial.Serial(
     	port= "COM" + port1,
@@ -68,7 +94,11 @@ def configureFirst():
     firstPort_entry = StringVar()
     Label(portSettings, text = "Port: ").pack()
     firstPort_entry = Entry(portSettings, textvariable = firstPort_send)
-    firstPort_entry.insert(END, port1)
+    firstPort_entry.delete(0, END)
+    try:
+        firstPort_entry.insert(END, ser1.port)
+    except:
+        firstPort_entry.insert(END, 3)
     firstPort_entry.pack()
 
     global firstSpeed_send
@@ -78,7 +108,10 @@ def configureFirst():
     Label(portSettings, text = "Speed: ").pack()
     firstSpeed_entry = Entry(portSettings, textvariable = firstSpeed_send)
     firstSpeed_entry.delete(0, END)
-    firstSpeed_entry.insert(END, speed)
+    try:
+        firstSpeed_entry.insert(END, ser1.baudrate)
+    except:
+        firstSpeed_entry.insert(END, 9600)
     firstSpeed_entry.pack()
 
     global firstData_send
@@ -87,7 +120,11 @@ def configureFirst():
     firstData_entry = StringVar()
     Label(portSettings, text = "Data bits: ").pack()
     firstData_entry = Entry(portSettings, textvariable = firstData_send)
-    firstData_entry.insert(END, data)
+    firstData_entry.delete(0, END)
+    try:
+        firstData_entry.insert(END, ser1.bytesize)
+    except:
+        firstData_entry.insert(END, "Eight")
     firstData_entry.pack()
 
     global firstStop_send
@@ -96,7 +133,11 @@ def configureFirst():
     firstStop_entry = StringVar()
     Label(portSettings, text = "Stop bits: ").pack()
     firstStop_entry = Entry(portSettings, textvariable = firstStop_send)
-    firstStop_entry.insert(END, stop)
+    firstStop_entry.delete(0, END)
+    try:
+        firstStop_entry.insert(END, ser1.stopbits)
+    except:
+        firstStop_entry.insert(END, "One")
     firstStop_entry.pack()
 
     global firstFlow_send
@@ -105,7 +146,13 @@ def configureFirst():
     firstFlow_entry = StringVar()
     Label(portSettings, text = "Flow control: ").pack()
     firstFlow_entry = Entry(portSettings, textvariable = firstFlow_send)
-    firstFlow_entry.insert(END, 'None')
+    firstFlow_entry.delete(0, END)
+    """
+    try:
+        return
+    except:
+        firstFlow_entry.insert(END, "None")
+    """
     firstFlow_entry.pack()
 
     global firstParity_send
@@ -114,7 +161,11 @@ def configureFirst():
     firstParity_entry = StringVar()
     Label(portSettings, text = "Parity bits: ").pack()
     firstParity_entry = Entry(portSettings, textvariable = firstParity_send)
-    firstParity_entry.insert(END, par)
+    firstParity_entry.delete(0, END)
+    try:
+        firstParity_entry.insert(END, ser1.parity)
+    except:
+        firstParity_entry.insert(END, "None")
     firstParity_entry.pack()
 
     Label(portSettings, text = "").pack()
@@ -127,32 +178,6 @@ def writeOutput(output, theFrame):
     for i in range(0, parts):
         print(parts)
         Label(theFrame, text = ">>" + output[(i*charInLine):(i*charInLine + charInLine)], width = 20).pack(side = BOTTOM)
-
-class fix(object):
-    def _init_(Self):
-        pass
-
-class ScrollableFrame(ttk.Frame, fix):
-    def __init__(self, container, *args, **kwargs):
-        super(ScrollableFrame, self).__init__(container, *args, **kwargs)
-        canvas = tk.Canvas(self)
-        scrollbar = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
-        self.scrollable_frame = ttk.Frame(canvas)
-
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(
-                scrollregion=canvas.bbox("all")
-            )
-        )
-
-        canvas.create_window((200, 0), window=self.scrollable_frame, anchor="nw")
-
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
 
 def outputSetup():
     global firstOutput
@@ -359,52 +384,7 @@ def main_screen():
     Button(frame3, text="Update ComPort2", width = 20, height = 1, command = updateComPort2).pack(side = LEFT)
     Button(frame3, text="Update ComPort3", width = 20, height = 1, command = updateComPort3).pack(side = LEFT)
 
-    global par1
-    global par2
-    global par3
-    global data1
-    global data2
-    global data3
-    global stop1
-    global stop2
-    global stop3
-    global speed1
-    global speed2
-    global speed3
-    global port1
-    global port2
-    global port3
-    par = "None"
-    data = "Eight"
-    stop = "One"
-    speed = 9600
     outputSetup()
-
-    '''
-    container = ttk.Frame(screen)
-    canvas = tk.Canvas(container)
-    scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
-    scrollable_frame = ttk.Frame(canvas)
-
-    scrollable_frame.bind(
-        "<Configure>",
-        lambda e: canvas.configure(
-            scrollregion=canvas.bbox("all")
-        )
-    )
-
-    canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-
-    canvas.configure(yscrollcommand=scrollbar.set)
-
-    for i in range(50):
-        ttk.Label(scrollable_frame, text="Sample scrolling label").pack()
-
-    container.pack()
-    canvas.pack(side="left", fill="both", expand=True)
-    scrollbar.pack(side="right", fill="y")
-    '''
-
     screen.mainloop()
 
 
