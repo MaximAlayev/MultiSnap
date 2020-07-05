@@ -29,6 +29,7 @@ class ScrollableFrame(ttk.Frame, fix):
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+
 def updateFirstCom():
     port1 = firstPort_send.get()
     par = serial.PARITY_NONE
@@ -53,29 +54,23 @@ def updateFirstCom():
         data = serial.SIXBITS
     if (firstData_send.get().upper() == "SEVEN" or firstData_send.get() == 7):
         data = serial.SEVENBITS
-
-    """
-    firstPort_entry.delete(0, END)
-    firstPort_entry.insert(END, port1)
-    firstSpeed_entry.delete(0, END)
-    firstSpeed_entry.insert(END, speed)
-    firstParity_entry.delete(0, END)
-    firstParity_entry.insert(END, par)
-    firstData_entry.delete(0, END)
-    firstData_entry.insert(END, data)
-    """
-
-    ser1 = serial.Serial(
-    	port= "COM" + port1,
-    	baudrate=int(speed),
-    	parity= par,
-    	stopbits= stop,
-    	bytesize= data
-    )
-    ser1.open()
-    ser1.isOpen()
-
-
+    screen2.destroy()
+    global ser1
+    try:
+        ser1 = serial.Serial(
+        	port= "COM" + port1,
+        	baudrate=int(speed),
+        	parity= par,
+        	stopbits= stop,
+        	bytesize= data
+        )
+    except:
+        print("Invalid Parameters")
+    try:
+        ser1.open()
+        ser1.isOpen()
+    except:
+        return
 
 def configureFirst():
     global screen2
@@ -171,6 +166,279 @@ def configureFirst():
     Label(portSettings, text = "").pack()
     Button(portSettings, text = "OK", width = 30, height = 1, command = updateFirstCom).pack()
 
+def updateSecondCom():
+    port2 = secondPort_send.get()
+    par = serial.PARITY_NONE
+    speed = secondSpeed_send.get()
+    if (secondParity_send.get().upper() == "ODD"):
+        par = serial.PARITY_ODD
+    if (secondParity_send.get().upper() == "EVEN"):
+        par = serial.PARITY_EVEN
+    if (secondParity_send.get().upper() == "MARK"):
+        par = serial.PARITY_MARK
+    if (secondParity_send.get().upper() == "SPACE"):
+        par = serial.PARITY_SPACE
+    stop = serial.STOPBITS_ONE
+    #if (firstStop_send.get().upper() == "ONE 5"):
+    #    ???
+    if (secondStop_send.get().upper() == "TWO" or secondStop_send.get() == 2):
+        stop = serial.STOPBITS_TWO
+    data = serial.EIGHTBITS
+    if (secondData_send.get().upper() == "FIVE" or secondData_send.get() == 5):
+        data = serial.FIVEBITS
+    if (secondData_send.get().upper() == "SIX" or secondData_send.get() == 6):
+        data = serial.SIXBITS
+    if (secondData_send.get().upper() == "SEVEN" or secondData_send.get() == 7):
+        data = serial.SEVENBITS
+
+    global ser2
+    screen3.destroy()
+    try:
+        ser2 = serial.Serial(
+        	port= "COM" + port2,
+        	baudrate=int(speed),
+        	parity= par,
+        	stopbits= stop,
+        	bytesize= data
+        )
+    except:
+        print("Invalid Parameters")
+    try:
+        ser2.open()
+        ser2.isOpen()
+    except:
+        return
+
+def configureSecond():
+    global screen3
+
+    screen3 = Toplevel(screen)
+    screen3.title("Configure Second COM")
+    screen3.geometry("300x500")
+    Label(screen3, text = "Configure the Second COM").pack()
+
+    portSettings = Frame(screen3)
+    portSettings.pack(side = LEFT)
+
+    global secondPort_send
+    global secondPort_entry
+    secondPort_send = StringVar()
+    secondPort_entry = StringVar()
+    Label(portSettings, text = "Port: ").pack()
+    secondPort_entry = Entry(portSettings, textvariable = secondPort_send)
+    secondPort_entry.delete(0, END)
+    try:
+        secondPort_entry.insert(END, ser2.port)
+    except:
+        secondPort_entry.insert(END, 3)
+    secondPort_entry.pack()
+
+    global secondSpeed_send
+    global secondSpeed_entry
+    secondSpeed_send = StringVar()
+    secondSpeed_entry = StringVar()
+    Label(portSettings, text = "Speed: ").pack()
+    secondSpeed_entry = Entry(portSettings, textvariable = secondSpeed_send)
+    secondSpeed_entry.delete(0, END)
+    try:
+        secondSpeed_entry.insert(END, ser2.baudrate)
+    except:
+        secondSpeed_entry.insert(END, 9600)
+    secondSpeed_entry.pack()
+
+    global secondData_send
+    global secondData_entry
+    secondData_send = StringVar()
+    secondData_entry = StringVar()
+    Label(portSettings, text = "Data bits: ").pack()
+    secondData_entry = Entry(portSettings, textvariable = secondData_send)
+    secondData_entry.delete(0, END)
+    try:
+        secondData_entry.insert(END, ser2.bytesize)
+    except:
+        secondData_entry.insert(END, "Eight")
+    secondData_entry.pack()
+
+    global secondStop_send
+    global secondStop_entry
+    secondStop_send = StringVar()
+    secondStop_entry = StringVar()
+    Label(portSettings, text = "Stop bits: ").pack()
+    secondStop_entry = Entry(portSettings, textvariable = secondStop_send)
+    secondStop_entry.delete(0, END)
+    try:
+        secondStop_entry.insert(END, ser2.stopbits)
+    except:
+        secondStop_entry.insert(END, "One")
+    secondStop_entry.pack()
+
+    global secondFlow_send
+    global secondFlow_entry
+    secondFlow_send = StringVar()
+    secondFlow_entry = StringVar()
+    Label(portSettings, text = "Flow control: ").pack()
+    secondFlow_entry = Entry(portSettings, textvariable = secondFlow_send)
+    secondFlow_entry.delete(0, END)
+    """
+    try:
+        return
+    except:
+        secondFlow_entry.insert(END, "None")
+    """
+    secondFlow_entry.pack()
+
+    global secondParity_send
+    global secondParity_entry
+    secondParity_send = StringVar()
+    secondParity_entry = StringVar()
+    Label(portSettings, text = "Parity bits: ").pack()
+    secondParity_entry = Entry(portSettings, textvariable = secondParity_send)
+    secondParity_entry.delete(0, END)
+    try:
+        secondParity_entry.insert(END, ser2.parity)
+    except:
+        secondParity_entry.insert(END, "None")
+    secondParity_entry.pack()
+
+    Label(portSettings, text = "").pack()
+    Button(portSettings, text = "OK", width = 30, height = 1, command = updateSecondCom).pack()
+
+def updateThirdCom():
+    port3 = thirdPort_send.get()
+    par = serial.PARITY_NONE
+    speed = thirdSpeed_send.get()
+    if (thirdParity_send.get().upper() == "ODD"):
+        par = serial.PARITY_ODD
+    if (thirdParity_send.get().upper() == "EVEN"):
+        par = serial.PARITY_EVEN
+    if (thirdParity_send.get().upper() == "MARK"):
+        par = serial.PARITY_MARK
+    if (thirdParity_send.get().upper() == "SPACE"):
+        par = serial.PARITY_SPACE
+    stop = serial.STOPBITS_ONE
+    #if (firstStop_send.get().upper() == "ONE 5"):
+    #    ???
+    if (thirdStop_send.get().upper() == "TWO" or thirdStop_send.get() == 2):
+        stop = serial.STOPBITS_TWO
+    data = serial.EIGHTBITS
+    if (thirdData_send.get().upper() == "FIVE" or thirdData_send.get() == 5):
+        data = serial.FIVEBITS
+    if (thirdData_send.get().upper() == "SIX" or thirdData_send.get() == 6):
+        data = serial.SIXBITS
+    if (thirdData_send.get().upper() == "SEVEN" or thirdData_send.get() == 7):
+        data = serial.SEVENBITS
+    screen4.destroy()
+    global ser3
+    try:
+        ser3 = serial.Serial(
+        	port= "COM" + port3,
+        	baudrate=int(speed),
+        	parity= par,
+        	stopbits= stop,
+        	bytesize= data
+        )
+    except:
+        print("Invalid Parameters")
+    try:
+        ser3.open()
+        ser3.isOpen()
+    except:
+        return
+
+
+def configureThird():
+    global screen4
+
+    screen4 = Toplevel(screen)
+    screen4.title("Configure Third COM")
+    screen4.geometry("300x500")
+    Label(screen4, text = "Configure the Third COM").pack()
+
+    portSettings = Frame(screen4)
+    portSettings.pack(side = LEFT)
+
+    global thirdPort_send
+    global thirdPort_entry
+    thirdPort_send = StringVar()
+    thirdPort_entry = StringVar()
+    Label(portSettings, text = "Port: ").pack()
+    thirdPort_entry = Entry(portSettings, textvariable = thirdPort_send)
+    thirdPort_entry.delete(0, END)
+    try:
+        thirdPort_entry.insert(END, ser3.port)
+    except:
+        thirdPort_entry.insert(END, 3)
+    thirdPort_entry.pack()
+
+    global thirdSpeed_send
+    global thirdSpeed_entry
+    thirdSpeed_send = StringVar()
+    thirdSpeed_entry = StringVar()
+    Label(portSettings, text = "Speed: ").pack()
+    thirdSpeed_entry = Entry(portSettings, textvariable = thirdSpeed_send)
+    thirdSpeed_entry.delete(0, END)
+    try:
+        thirdSpeed_entry.insert(END, ser3.baudrate)
+    except:
+        thirdSpeed_entry.insert(END, 9600)
+    thirdSpeed_entry.pack()
+
+    global thirdData_send
+    global thirdData_entry
+    thirdData_send = StringVar()
+    thirdData_entry = StringVar()
+    Label(portSettings, text = "Data bits: ").pack()
+    thirdData_entry = Entry(portSettings, textvariable = thirdData_send)
+    thirdData_entry.delete(0, END)
+    try:
+        thirdData_entry.insert(END, ser3.bytesize)
+    except:
+        thirdData_entry.insert(END, "Eight")
+    thirdData_entry.pack()
+
+    global thirdStop_send
+    global thirdStop_entry
+    thirdStop_send = StringVar()
+    thirdStop_entry = StringVar()
+    Label(portSettings, text = "Stop bits: ").pack()
+    thirdStop_entry = Entry(portSettings, textvariable = thirdStop_send)
+    thirdStop_entry.delete(0, END)
+    try:
+        thirdStop_entry.insert(END, ser3.stopbits)
+    except:
+        thirdStop_entry.insert(END, "One")
+    thirdStop_entry.pack()
+
+    global thirdFlow_send
+    global thirdFlow_entry
+    thirdFlow_send = StringVar()
+    thirdFlow_entry = StringVar()
+    Label(portSettings, text = "Flow control: ").pack()
+    thirdFlow_entry = Entry(portSettings, textvariable = thirdFlow_send)
+    thirdFlow_entry.delete(0, END)
+    """
+    try:
+        return
+    except:
+        thirdFlow_entry.insert(END, "None")
+    """
+    thirdFlow_entry.pack()
+
+    global thirdParity_send
+    global thirdParity_entry
+    thirdParity_send = StringVar()
+    thirdParity_entry = StringVar()
+    Label(portSettings, text = "Parity bits: ").pack()
+    thirdParity_entry = Entry(portSettings, textvariable = thirdParity_send)
+    thirdParity_entry.delete(0, END)
+    try:
+        thirdParity_entry.insert(END, ser3.parity)
+    except:
+        thirdParity_entry.insert(END, "None")
+    thirdParity_entry.pack()
+
+    Label(portSettings, text = "").pack()
+    Button(portSettings, text = "OK", width = 30, height = 1, command = updateThirdCom).pack()
 
 def writeOutput(output, theFrame):
     charInLine = 20
@@ -194,7 +462,7 @@ def outputSetup():
     secondFrame.pack(side = LEFT)
     secondOutput = ScrollableFrame(secondFrame)
     secondOutput.pack(side = BOTTOM)
-    Button(secondFrame, text = "Configure", width = 20).pack(side = BOTTOM)
+    Button(secondFrame, text = "Configure", width = 20, command = configureSecond).pack(side = BOTTOM)
 
     global thirdOutput
     global thirdFrame
@@ -202,7 +470,7 @@ def outputSetup():
     thirdFrame.pack(side = LEFT)
     thirdOutput = ScrollableFrame(thirdFrame)
     thirdOutput.pack(side = BOTTOM)
-    Button(thirdFrame, text = "Configure", width = 20).pack(side = BOTTOM)
+    Button(thirdFrame, text = "Configure", width = 20, command = configureThird).pack(side = BOTTOM)
 
 def comportDisplayLabels():
     Label(frame2, text = "ComPort1: " + comPort1, width = 20).pack(side = LEFT)
@@ -271,31 +539,18 @@ def send_to_all():
     command = command_send.get()
     command_entry.delete(0, END)
 
-    #labelA = Label(frame, text = command + "_A", width = 20)
-    #labelA.pack( side = LEFT)
-
-    #labelB = Label(frame, text = command + "_B", width = 20)
-    #labelB.pack( side = LEFT )
-
-    #labelC = Label(frame, text = command + "_C", width = 20)
-    #labelC.pack( side = LEFT )
-
-    #We're just gonna have the command be given in the scrolalble frame instead of its own label
-
     ttk.Label(firstOutput.scrollable_frame, text = "Command: " + command + "_A", width = 20).pack(side = TOP)
     ttk.Label(secondOutput.scrollable_frame, text = "Command: " + command + "_B", width = 20).pack(side = TOP)
     ttk.Label(thirdOutput.scrollable_frame, text = "Command: " + command + "_C", width = 20).pack(side = TOP)
 
     ser1.write(command + "_A" + '\r\n')
     out = ''
-
     # let's wait one second before reading output (let's give device time to answer)
     time.sleep(1)
     while ser1.inWaiting() > 0:
         out += ser1.read(1)
     if out != '':
         writeOutput(out, firstOutput.scrollable_frame)
-        #Label(firstOutput.scrollable_frame, text = ">>" + out, width = 20).pack(side = BOTTOM)
 
     ser2.write(command + "_B" + '\r\n')
     out = ''
@@ -392,41 +647,3 @@ comPort1 = "None"
 comPort2 = "None"
 comPort3 = "None"
 main_screen()
-
-"""
-# configure the serial connections (the parameters differs on the device you are connecting to)
-ser = serial.Serial(
-	port='/dev/ttyUSB1',
-	baudrate=9600,
-	parity=serial.PARITY_ODD,
-	stopbits=serial.STOPBITS_TWO,
-	bytesize=serial.SEVENBITS
-)
-
-ser.open()
-ser.isOpen()
-
-Print('Enter your commands below.\r\nInsert "exit" to leave the application.')
-
-input=1
-while 1 :
-	# get keyboard input
-	input = raw_input(">> ")
-        # Python 3 users
-        # input = input(">> ")
-	if input == 'exit':
-		ser.close()
-		exit()
-	else:
-		# send the character to the device
-		# (note that I happend a \r\n carriage return and line feed to the characters - this is requested by my device)
-		ser.write(input + '\r\n')
-		out = ''
-		# let's wait one second before reading output (let's give device time to answer)
-		time.sleep(1)
-		while ser.inWaiting() > 0:
-			out += ser.read(1)
-
-		if out != '':
-			Print(">>" + out)
-"""
