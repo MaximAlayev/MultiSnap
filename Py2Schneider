@@ -472,65 +472,6 @@ def outputSetup():
     thirdOutput.pack(side = BOTTOM)
     Button(thirdFrame, text = "Configure", width = 20, command = configureThird).pack(side = BOTTOM)
 
-def comportDisplayLabels():
-    Label(frame2, text = "ComPort1: " + comPort1, width = 20).pack(side = LEFT)
-    Label(frame2, text = "ComPort2: " + comPort2, width = 20).pack(side = LEFT)
-    Label(frame2, text = "ComPort3: " + comPort3, width = 20).pack(side = LEFT)
-
-def updateComPort1():
-    global ser1
-    global comPort1
-    for widget in frame2.winfo_children():
-        widget.destroy()
-    comPort1 = comPort1_send.get()
-    comPort1_entry.delete(0, END)
-    comportDisplayLabels()
-    ser1 = serial.Serial(
-    	port="COM" + comPort1,
-    	baudrate=9600,
-    	parity=serial.PARITY_NONE,
-    	stopbits=serial.STOPBITS_ONE,
-    	bytesize=serial.EIGHTBITS
-    )
-    ser1.open()
-    ser1.isOpen()
-
-def updateComPort2():
-    global comPort2
-    global ser2
-    for widget in frame2.winfo_children():
-        widget.destroy()
-    comPort2 = comPort2_send.get()
-    comPort2_entry.delete(0, END)
-    comportDisplayLabels()
-    ser2 = serial.Serial(
-    	port="COM" + comPort2,
-    	baudrate=9600,
-    	parity=serial.PARITY_NONE,
-    	stopbits=serial.STOPBITS_ONE,
-    	bytesize=serial.EIGHTBITS
-    )
-    ser2.open()
-    ser2.isOpen()
-
-def updateComPort3():
-    global comPort3
-    global ser3
-    for widget in frame2.winfo_children():
-        widget.destroy()
-    comPort3 = comPort3_send.get()
-    comPort3_entry.delete(0, END)
-    comportDisplayLabels()
-    ser3 = serial.Serial(
-    	port="COM" + comPort3,
-    	baudrate=9600,
-    	parity=serial.PARITY_NONE,
-    	stopbits=serial.STOPBITS_ONE,
-    	bytesize=serial.EIGHTBITS,
-    )
-    ser3.open()
-    ser3.isOpen()
-
 def send_to_all():
     for widget in frame.winfo_children():
         widget.destroy()
@@ -610,40 +551,7 @@ def main_screen():
     firstLabel = Label(frame, text = "Awaiting Command")
     firstLabel.pack()
 
-    global comPort1_send
-    global comPort1_entry
-    comPort1_send = StringVar()
-    comPort1_entry = StringVar()
-    Label(frame2, text = "ComPort1: " + comPort1, width = 20).pack(side = LEFT)
-    comPort1_entry = Entry(frame1, textvariable = comPort1_send)
-    comPort1_entry.pack(side = LEFT)
-
-    global comPort2_send
-    global comPort2_entry
-    comPort2_send = StringVar()
-    comPort2_entry = StringVar()
-    Label(frame2, text = "ComPort2: " + comPort2, width = 20).pack(side = LEFT)
-    comPort2_entry = Entry(frame1, textvariable = comPort2_send)
-    comPort2_entry.pack(side = LEFT)
-
-    global comPort3_send
-    global comPort3_entry
-    comPort3_send = StringVar()
-    comPort3_entry = StringVar()
-    Label(frame2, text = "ComPort3: " + comPort3, width = 20).pack(side = LEFT)
-    comPort3_entry = Entry(frame1, textvariable = comPort3_send)
-    comPort3_entry.pack(side = LEFT)
-    Label(text = "").pack()
-
-    Button(frame3, text="Update ComPort1", width = 20, height = 1, command = updateComPort1).pack(side = LEFT)
-    Button(frame3, text="Update ComPort2", width = 20, height = 1, command = updateComPort2).pack(side = LEFT)
-    Button(frame3, text="Update ComPort3", width = 20, height = 1, command = updateComPort3).pack(side = LEFT)
-
     outputSetup()
     screen.mainloop()
 
-
-comPort1 = "None"
-comPort2 = "None"
-comPort3 = "None"
 main_screen()
