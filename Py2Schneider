@@ -1,17 +1,16 @@
-from Tkinter import *
-import ttk
-import Tkinter as tk
+from tkinter import *
+from tkinter import ttk
+import tkinter as tk
 import os
 import time
+from time import sleep
 import serial
+from threading import Timer
+from apscheduler.schedulers.background import BackgroundScheduler
 
-class fix(object):
-    def _init_(Self):
-        pass
-
-class ScrollableFrame(ttk.Frame, fix):
+class ScrollableFrame(ttk.Frame):
     def __init__(self, container, *args, **kwargs):
-        super(ScrollableFrame, self).__init__(container, *args, **kwargs)
+        super().__init__(container, *args, **kwargs)
         canvas = tk.Canvas(self)
         scrollbar = ttk.Scrollbar(self, orient="vertical", command=canvas.yview)
         self.scrollable_frame = ttk.Frame(canvas)
@@ -30,35 +29,36 @@ class ScrollableFrame(ttk.Frame, fix):
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-def updateFirstCom():
-    port1 = firstPort_send.get()
+def updateCom(serialLetter):
+    global repeatIntervalInt
+    repeatIntervalInt = int(repeatIntervalSend.get())
+    port = portSend.get()
     par = serial.PARITY_NONE
-    speed = firstSpeed_send.get()
-    if (firstParity_send.get().upper() == "ODD"):
+    speed = speedSend.get()
+    if (paritySend.get().upper() == "ODD"):
         par = serial.PARITY_ODD
-    if (firstParity_send.get().upper() == "EVEN"):
+    if (paritySend.get().upper() == "EVEN"):
         par = serial.PARITY_EVEN
-    if (firstParity_send.get().upper() == "MARK"):
+    if (paritySend.get().upper() == "MARK"):
         par = serial.PARITY_MARK
-    if (firstParity_send.get().upper() == "SPACE"):
+    if (paritySend.get().upper() == "SPACE"):
         par = serial.PARITY_SPACE
     stop = serial.STOPBITS_ONE
     #if (firstStop_send.get().upper() == "ONE 5"):
     #    ???
-    if (firstStop_send.get().upper() == "TWO" or firstStop_send.get() == 2):
+    if (stopSend.get().upper() == "TWO" or stopSend.get() == 2):
         stop = serial.STOPBITS_TWO
     data = serial.EIGHTBITS
-    if (firstData_send.get().upper() == "FIVE" or firstData_send.get() == 5):
+    if (dataSend.get().upper() == "FIVE" or dataSend.get() == 5):
         data = serial.FIVEBITS
-    if (firstData_send.get().upper() == "SIX" or firstData_send.get() == 6):
+    if (dataSend.get().upper() == "SIX" or dataSend.get() == 6):
         data = serial.SIXBITS
-    if (firstData_send.get().upper() == "SEVEN" or firstData_send.get() == 7):
+    if (dataSend.get().upper() == "SEVEN" or dataSend.get() == 7):
         data = serial.SEVENBITS
-    screen2.destroy()
-    global ser1
+    configureScreen.destroy()
     try:
-        ser1 = serial.Serial(
-        	port= "COM" + port1,
+        serialLetter = serial.Serial(
+        	port= "COM" + port,
         	baudrate=int(speed),
         	parity= par,
         	stopbits= stop,
@@ -67,378 +67,113 @@ def updateFirstCom():
     except:
         print("Invalid Parameters")
     try:
-        ser1.open()
-        ser1.isOpen()
+        serialLetter.open()
+        serialLetter.isOpen()
     except:
         return
 
-def configureFirst():
-    global screen2
+def configureSerial(serialLetter):
+    global configureScreen
+    configureScreen = Toplevel(mainScreen)
+    configureScreen.title("Configure COM")
+    configureScreen.geometry("300x500")
+    Label(configureScreen, text = "Configure the COM").pack()
+    portSettings = Frame(configureScreen)
+    portSettings.pack()
 
-    screen2 = Toplevel(screen)
-    screen2.title("Configure First COM")
-    screen2.geometry("300x500")
-    Label(screen2, text = "Configure the First COM").pack()
-
-    portSettings = Frame(screen2)
-    portSettings.pack(side = LEFT)
-
-    global firstPort_send
-    global firstPort_entry
-    firstPort_send = StringVar()
-    firstPort_entry = StringVar()
+    global portSend
+    global portEntry
+    portSend = StringVar()
+    portEntry = StringVar()
     Label(portSettings, text = "Port: ").pack()
-    firstPort_entry = Entry(portSettings, textvariable = firstPort_send)
-    firstPort_entry.delete(0, END)
+    portEntry = Entry(portSettings, textvariable = portSend)
+    portSend.set("")
     try:
-        firstPort_entry.insert(END, ser1.port)
+        portEntry.insert(END, serialLetter.port)
     except:
-        firstPort_entry.insert(END, 3)
-    firstPort_entry.pack()
+        portEntry.insert(END, 3)
+    portEntry.pack()
 
-    global firstSpeed_send
-    global firstSpeed_entry
-    firstSpeed_send = StringVar()
-    firstSpeed_entry = StringVar()
+    global speedSend
+    global speedEntry
+    speedSend = StringVar()
+    speedEntry = StringVar()
     Label(portSettings, text = "Speed: ").pack()
-    firstSpeed_entry = Entry(portSettings, textvariable = firstSpeed_send)
-    firstSpeed_entry.delete(0, END)
+    speedEntry = Entry(portSettings, textvariable = speedSend)
+    speedSend.set("")
     try:
-        firstSpeed_entry.insert(END, ser1.baudrate)
+        speedEntry.insert(END, serialLetter.baudrate)
     except:
-        firstSpeed_entry.insert(END, 9600)
-    firstSpeed_entry.pack()
+        speedEntry.insert(END, 9600)
+    speedEntry.pack()
 
-    global firstData_send
-    global firstData_entry
-    firstData_send = StringVar()
-    firstData_entry = StringVar()
+    global dataSend
+    global dataEntry
+    dataSend = StringVar()
+    dataEntry = StringVar()
     Label(portSettings, text = "Data bits: ").pack()
-    firstData_entry = Entry(portSettings, textvariable = firstData_send)
-    firstData_entry.delete(0, END)
+    dataEntry = Entry(portSettings, textvariable = dataSend)
+    dataSend.set("")
     try:
-        firstData_entry.insert(END, ser1.bytesize)
+        dataEntry.insert(END, serialLetter.bytesize)
     except:
-        firstData_entry.insert(END, "Eight")
-    firstData_entry.pack()
+        dataEntry.insert(END, "Eight")
+    dataEntry.pack()
 
-    global firstStop_send
-    global firstStop_entry
-    firstStop_send = StringVar()
-    firstStop_entry = StringVar()
+    global stopSend
+    global stopEntry
+    stopSend = StringVar()
+    stopEntry = StringVar()
     Label(portSettings, text = "Stop bits: ").pack()
-    firstStop_entry = Entry(portSettings, textvariable = firstStop_send)
-    firstStop_entry.delete(0, END)
+    stopEntry = Entry(portSettings, textvariable = stopSend)
+    stopSend.set("")
     try:
-        firstStop_entry.insert(END, ser1.stopbits)
+        stopEntry.insert(END, serialLetter.stopbits)
     except:
-        firstStop_entry.insert(END, "One")
-    firstStop_entry.pack()
+        stopEntry.insert(END, "One")
+    stopEntry.pack()
 
-    global firstFlow_send
-    global firstFlow_entry
-    firstFlow_send = StringVar()
-    firstFlow_entry = StringVar()
-    Label(portSettings, text = "Flow control: ").pack()
-    firstFlow_entry = Entry(portSettings, textvariable = firstFlow_send)
-    firstFlow_entry.delete(0, END)
     """
+    global flowSend
+    global flowEntry
+    flowSend = StringVar()
+    flowEntry = StringVar()
+    Label(portSettings, text = "Flow control: ").pack()
+    flowEntry = Entry(portSettings, textvariable = flowSend)
+    flowSend.set("")
+
     try:
         return
     except:
         firstFlow_entry.insert(END, "None")
-    """
+
     firstFlow_entry.pack()
+    """
 
-    global firstParity_send
-    global firstParity_entry
-    firstParity_send = StringVar()
-    firstParity_entry = StringVar()
+    global paritySend
+    global parityEntry
+    paritySend = StringVar()
+    parityEntry = StringVar()
     Label(portSettings, text = "Parity bits: ").pack()
-    firstParity_entry = Entry(portSettings, textvariable = firstParity_send)
-    firstParity_entry.delete(0, END)
+    parityEntry = Entry(portSettings, textvariable = paritySend)
+    paritySend.set("")
     try:
-        firstParity_entry.insert(END, ser1.parity)
+        parityEntry.insert(END, serialLetter.parity)
     except:
-        firstParity_entry.insert(END, "None")
-    firstParity_entry.pack()
+        parityEntry.insert(END, "None")
+    parityEntry.pack()
+
+    global repeatIntervalSend
+    global repeatIntervalEntry
+    repeatIntervalEntry = StringVar()
+    repeatIntervalSend = StringVar()
+    Label(portSettings, text = "Repeat Interval (in seconds): ").pack()
+    repeatIntervalEntry = Entry(portSettings, textvariable = repeatIntervalSend)
+    repeatIntervalEntry.insert(END, repeatIntervalInt)
+    repeatIntervalEntry.pack()
 
     Label(portSettings, text = "").pack()
-    Button(portSettings, text = "OK", width = 30, height = 1, command = updateFirstCom).pack()
-
-def updateSecondCom():
-    port2 = secondPort_send.get()
-    par = serial.PARITY_NONE
-    speed = secondSpeed_send.get()
-    if (secondParity_send.get().upper() == "ODD"):
-        par = serial.PARITY_ODD
-    if (secondParity_send.get().upper() == "EVEN"):
-        par = serial.PARITY_EVEN
-    if (secondParity_send.get().upper() == "MARK"):
-        par = serial.PARITY_MARK
-    if (secondParity_send.get().upper() == "SPACE"):
-        par = serial.PARITY_SPACE
-    stop = serial.STOPBITS_ONE
-    #if (firstStop_send.get().upper() == "ONE 5"):
-    #    ???
-    if (secondStop_send.get().upper() == "TWO" or secondStop_send.get() == 2):
-        stop = serial.STOPBITS_TWO
-    data = serial.EIGHTBITS
-    if (secondData_send.get().upper() == "FIVE" or secondData_send.get() == 5):
-        data = serial.FIVEBITS
-    if (secondData_send.get().upper() == "SIX" or secondData_send.get() == 6):
-        data = serial.SIXBITS
-    if (secondData_send.get().upper() == "SEVEN" or secondData_send.get() == 7):
-        data = serial.SEVENBITS
-
-    global ser2
-    screen3.destroy()
-    try:
-        ser2 = serial.Serial(
-        	port= "COM" + port2,
-        	baudrate=int(speed),
-        	parity= par,
-        	stopbits= stop,
-        	bytesize= data
-        )
-    except:
-        print("Invalid Parameters")
-    try:
-        ser2.open()
-        ser2.isOpen()
-    except:
-        return
-
-def configureSecond():
-    global screen3
-
-    screen3 = Toplevel(screen)
-    screen3.title("Configure Second COM")
-    screen3.geometry("300x500")
-    Label(screen3, text = "Configure the Second COM").pack()
-
-    portSettings = Frame(screen3)
-    portSettings.pack(side = LEFT)
-
-    global secondPort_send
-    global secondPort_entry
-    secondPort_send = StringVar()
-    secondPort_entry = StringVar()
-    Label(portSettings, text = "Port: ").pack()
-    secondPort_entry = Entry(portSettings, textvariable = secondPort_send)
-    secondPort_entry.delete(0, END)
-    try:
-        secondPort_entry.insert(END, ser2.port)
-    except:
-        secondPort_entry.insert(END, 3)
-    secondPort_entry.pack()
-
-    global secondSpeed_send
-    global secondSpeed_entry
-    secondSpeed_send = StringVar()
-    secondSpeed_entry = StringVar()
-    Label(portSettings, text = "Speed: ").pack()
-    secondSpeed_entry = Entry(portSettings, textvariable = secondSpeed_send)
-    secondSpeed_entry.delete(0, END)
-    try:
-        secondSpeed_entry.insert(END, ser2.baudrate)
-    except:
-        secondSpeed_entry.insert(END, 9600)
-    secondSpeed_entry.pack()
-
-    global secondData_send
-    global secondData_entry
-    secondData_send = StringVar()
-    secondData_entry = StringVar()
-    Label(portSettings, text = "Data bits: ").pack()
-    secondData_entry = Entry(portSettings, textvariable = secondData_send)
-    secondData_entry.delete(0, END)
-    try:
-        secondData_entry.insert(END, ser2.bytesize)
-    except:
-        secondData_entry.insert(END, "Eight")
-    secondData_entry.pack()
-
-    global secondStop_send
-    global secondStop_entry
-    secondStop_send = StringVar()
-    secondStop_entry = StringVar()
-    Label(portSettings, text = "Stop bits: ").pack()
-    secondStop_entry = Entry(portSettings, textvariable = secondStop_send)
-    secondStop_entry.delete(0, END)
-    try:
-        secondStop_entry.insert(END, ser2.stopbits)
-    except:
-        secondStop_entry.insert(END, "One")
-    secondStop_entry.pack()
-
-    global secondFlow_send
-    global secondFlow_entry
-    secondFlow_send = StringVar()
-    secondFlow_entry = StringVar()
-    Label(portSettings, text = "Flow control: ").pack()
-    secondFlow_entry = Entry(portSettings, textvariable = secondFlow_send)
-    secondFlow_entry.delete(0, END)
-    """
-    try:
-        return
-    except:
-        secondFlow_entry.insert(END, "None")
-    """
-    secondFlow_entry.pack()
-
-    global secondParity_send
-    global secondParity_entry
-    secondParity_send = StringVar()
-    secondParity_entry = StringVar()
-    Label(portSettings, text = "Parity bits: ").pack()
-    secondParity_entry = Entry(portSettings, textvariable = secondParity_send)
-    secondParity_entry.delete(0, END)
-    try:
-        secondParity_entry.insert(END, ser2.parity)
-    except:
-        secondParity_entry.insert(END, "None")
-    secondParity_entry.pack()
-
-    Label(portSettings, text = "").pack()
-    Button(portSettings, text = "OK", width = 30, height = 1, command = updateSecondCom).pack()
-
-def updateThirdCom():
-    port3 = thirdPort_send.get()
-    par = serial.PARITY_NONE
-    speed = thirdSpeed_send.get()
-    if (thirdParity_send.get().upper() == "ODD"):
-        par = serial.PARITY_ODD
-    if (thirdParity_send.get().upper() == "EVEN"):
-        par = serial.PARITY_EVEN
-    if (thirdParity_send.get().upper() == "MARK"):
-        par = serial.PARITY_MARK
-    if (thirdParity_send.get().upper() == "SPACE"):
-        par = serial.PARITY_SPACE
-    stop = serial.STOPBITS_ONE
-    #if (firstStop_send.get().upper() == "ONE 5"):
-    #    ???
-    if (thirdStop_send.get().upper() == "TWO" or thirdStop_send.get() == 2):
-        stop = serial.STOPBITS_TWO
-    data = serial.EIGHTBITS
-    if (thirdData_send.get().upper() == "FIVE" or thirdData_send.get() == 5):
-        data = serial.FIVEBITS
-    if (thirdData_send.get().upper() == "SIX" or thirdData_send.get() == 6):
-        data = serial.SIXBITS
-    if (thirdData_send.get().upper() == "SEVEN" or thirdData_send.get() == 7):
-        data = serial.SEVENBITS
-    screen4.destroy()
-    global ser3
-    try:
-        ser3 = serial.Serial(
-        	port= "COM" + port3,
-        	baudrate=int(speed),
-        	parity= par,
-        	stopbits= stop,
-        	bytesize= data
-        )
-    except:
-        print("Invalid Parameters")
-    try:
-        ser3.open()
-        ser3.isOpen()
-    except:
-        return
-
-
-def configureThird():
-    global screen4
-
-    screen4 = Toplevel(screen)
-    screen4.title("Configure Third COM")
-    screen4.geometry("300x500")
-    Label(screen4, text = "Configure the Third COM").pack()
-
-    portSettings = Frame(screen4)
-    portSettings.pack(side = LEFT)
-
-    global thirdPort_send
-    global thirdPort_entry
-    thirdPort_send = StringVar()
-    thirdPort_entry = StringVar()
-    Label(portSettings, text = "Port: ").pack()
-    thirdPort_entry = Entry(portSettings, textvariable = thirdPort_send)
-    thirdPort_entry.delete(0, END)
-    try:
-        thirdPort_entry.insert(END, ser3.port)
-    except:
-        thirdPort_entry.insert(END, 3)
-    thirdPort_entry.pack()
-
-    global thirdSpeed_send
-    global thirdSpeed_entry
-    thirdSpeed_send = StringVar()
-    thirdSpeed_entry = StringVar()
-    Label(portSettings, text = "Speed: ").pack()
-    thirdSpeed_entry = Entry(portSettings, textvariable = thirdSpeed_send)
-    thirdSpeed_entry.delete(0, END)
-    try:
-        thirdSpeed_entry.insert(END, ser3.baudrate)
-    except:
-        thirdSpeed_entry.insert(END, 9600)
-    thirdSpeed_entry.pack()
-
-    global thirdData_send
-    global thirdData_entry
-    thirdData_send = StringVar()
-    thirdData_entry = StringVar()
-    Label(portSettings, text = "Data bits: ").pack()
-    thirdData_entry = Entry(portSettings, textvariable = thirdData_send)
-    thirdData_entry.delete(0, END)
-    try:
-        thirdData_entry.insert(END, ser3.bytesize)
-    except:
-        thirdData_entry.insert(END, "Eight")
-    thirdData_entry.pack()
-
-    global thirdStop_send
-    global thirdStop_entry
-    thirdStop_send = StringVar()
-    thirdStop_entry = StringVar()
-    Label(portSettings, text = "Stop bits: ").pack()
-    thirdStop_entry = Entry(portSettings, textvariable = thirdStop_send)
-    thirdStop_entry.delete(0, END)
-    try:
-        thirdStop_entry.insert(END, ser3.stopbits)
-    except:
-        thirdStop_entry.insert(END, "One")
-    thirdStop_entry.pack()
-
-    global thirdFlow_send
-    global thirdFlow_entry
-    thirdFlow_send = StringVar()
-    thirdFlow_entry = StringVar()
-    Label(portSettings, text = "Flow control: ").pack()
-    thirdFlow_entry = Entry(portSettings, textvariable = thirdFlow_send)
-    thirdFlow_entry.delete(0, END)
-    """
-    try:
-        return
-    except:
-        thirdFlow_entry.insert(END, "None")
-    """
-    thirdFlow_entry.pack()
-
-    global thirdParity_send
-    global thirdParity_entry
-    thirdParity_send = StringVar()
-    thirdParity_entry = StringVar()
-    Label(portSettings, text = "Parity bits: ").pack()
-    thirdParity_entry = Entry(portSettings, textvariable = thirdParity_send)
-    thirdParity_entry.delete(0, END)
-    try:
-        thirdParity_entry.insert(END, ser3.parity)
-    except:
-        thirdParity_entry.insert(END, "None")
-    thirdParity_entry.pack()
-
-    Label(portSettings, text = "").pack()
-    Button(portSettings, text = "OK", width = 30, height = 1, command = updateThirdCom).pack()
+    Button(portSettings, text = "OK", width = 30, height = 1, command=lambda : updateCom(serialLetter)).pack()
 
 def writeOutput(output, theFrame):
     charInLine = 20
@@ -447,111 +182,250 @@ def writeOutput(output, theFrame):
         print(parts)
         Label(theFrame, text = ">>" + output[(i*charInLine):(i*charInLine + charInLine)], width = 20).pack(side = BOTTOM)
 
-def outputSetup():
-    global firstOutput
-    global firstFrame
-    firstFrame = Frame(frame4)
-    firstFrame.pack(side = LEFT)
-    firstOutput = ScrollableFrame(firstFrame)
-    firstOutput.pack(side = BOTTOM)
-    Button(firstFrame, text = "Configure", width = 20, command = configureFirst).pack(side = BOTTOM)
+def sendCommand(command, output, serialLetter):
+    if (repeatStatusA == "OFF" and schedA.running):
+        schedA.shutdown()
+    if (repeatStatusB == "OFF" and schedB.running):
+        schedB.shutdown()
+    if (repeatStatusC == "OFF" and schedC.running):
+        schedC.shutdown()
 
-    global secondOutput
-    global secondFrame
-    secondFrame = Frame(frame4)
-    secondFrame.pack(side = LEFT)
-    secondOutput = ScrollableFrame(secondFrame)
-    secondOutput.pack(side = BOTTOM)
-    Button(secondFrame, text = "Configure", width = 20, command = configureSecond).pack(side = BOTTOM)
-
-    global thirdOutput
-    global thirdFrame
-    thirdFrame = Frame(frame4)
-    thirdFrame.pack(side = LEFT)
-    thirdOutput = ScrollableFrame(thirdFrame)
-    thirdOutput.pack(side = BOTTOM)
-    Button(thirdFrame, text = "Configure", width = 20, command = configureThird).pack(side = BOTTOM)
-
-def send_to_all():
-    for widget in frame.winfo_children():
-        widget.destroy()
-    frame.pack_forget()
-    frame.pack()
-    command = command_send.get()
-    command_entry.delete(0, END)
-
-    ttk.Label(firstOutput.scrollable_frame, text = "Command: " + command + "_A", width = 20).pack(side = TOP)
-    ttk.Label(secondOutput.scrollable_frame, text = "Command: " + command + "_B", width = 20).pack(side = TOP)
-    ttk.Label(thirdOutput.scrollable_frame, text = "Command: " + command + "_C", width = 20).pack(side = TOP)
-
-    ser1.write(command + "_A" + '\r\n')
+    ttk.Label(output.scrollable_frame, text = "Command: " + command + "_A", width = 20).pack(side = TOP)
+    serialLetter.write(command + "_A" + '\r\n')
     out = ''
     # let's wait one second before reading output (let's give device time to answer)
     time.sleep(1)
-    while ser1.inWaiting() > 0:
-        out += ser1.read(1)
+    while serialLetter.inWaiting() > 0:
+        out += serialLetter.read(1)
     if out != '':
-        writeOutput(out, firstOutput.scrollable_frame)
+        writeOutput(command, output.scrollable_frame)
 
-    ser2.write(command + "_B" + '\r\n')
+def sendToAll():
+    global schedA
+    global schedB
+    global schedC
+    schedA = BackgroundScheduler()
+    schedB = BackgroundScheduler()
+    schedC = BackgroundScheduler()
+
+    command = commandSend.get()
+    commandSend.set("")
+    ttk.Label(outputA.scrollable_frame, text = "Command: " + command + "_A", width = 20).pack(side = TOP)
+    ttk.Label(outputB.scrollable_frame, text = "Command: " + command + "_B", width = 20).pack(side = TOP)
+    ttk.Label(outputC.scrollable_frame, text = "Command: " + command + "_C", width = 20).pack(side = TOP)
+
+    if(repeatStatusA == "ON"):
+        #sendRepeat(2, command, outputA)
+        schedA.add_job(lambda: sendCommand(command, outputA, serialA), 'interval', seconds = repeatIntervalInt)
+        schedA.start()
+    if(repeatStatusB == "ON"):
+        #sendRepeat(2, command, outputB)
+        schedB.add_job(lambda: sendCommand(command, outputB, serialB), 'interval', seconds = repeatIntervalInt)
+        schedB.start()
+    if(repeatStatusC == "ON"):
+        #sendRepeat(2, command, outputC)
+        schedC.add_job(lambda: sendCommand(command, outputC, serialC), 'interval', seconds = repeatIntervalInt)
+        schedC.start()
+
+    serialA.write(command + "_A" + '\r\n')
+    out = ''
+    # let's wait one second before reading output (let's give device time to answer)
+    time.sleep(1)
+    while serialA.inWaiting() > 0:
+        out += serialA.read(1)
+    if out != '':
+        writeOutput(out, outputA.scrollable_frame)
+
+    serialB.write(command + "_B" + '\r\n')
     out = ''
     time.sleep(1)
-    while ser2.inWaiting() > 0:
-        out += ser2.read(1)
+    while serialB.inWaiting() > 0:
+        out += serialB.read(1)
     if out != '':
-        writeOutput(out, secondOutput.scrollable_frame)
+        writeOutput(out, outputB.scrollable_frame)
 
-    ser3.write(command + "_C" + '\r\n')
+    serialC.write(command + "_C" + '\r\n')
     out = ''
     time.sleep(1)
-    while ser3.inWaiting() > 0:
-        out += ser3.read(1)
+    while serialC.inWaiting() > 0:
+        out += serialC.read(1)
     if out != '':
-        writeOutput(out, thirdOutput.scrollable_frame)
+        writeOutput(out, outputC.scrollable_frame)
 
-def main_screen():
-    global first
-    global screen
-    screen = Tk()
-    screen.geometry("1000x600")
-    screen.title("Schneider 1.0")
+def sendToA():
+    global schedA
+    global schedB
+    global schedC
+    schedA = BackgroundScheduler()
+    schedB = BackgroundScheduler()
+    schedC = BackgroundScheduler()
+
+    command = commandSend.get()
+    commandSend.set("")
+    ttk.Label(outputA.scrollable_frame, text = "Command: " + command + "_A", width = 20).pack(side = TOP)
+
+    if(repeatStatusA == "ON"):
+        #sendRepeat(2, command, outputA)
+        schedA.add_job(lambda: sendCommand(command, outputA, serialA), 'interval', seconds = repeatIntervalInt)
+        schedA.start()
+
+    serialA.write(command + "_A" + '\r\n')
+    out = ''
+    # let's wait one second before reading output (let's give device time to answer)
+    time.sleep(1)
+    while serialA.inWaiting() > 0:
+        out += serialA.read(1)
+    if out != '':
+        writeOutput(out, outputA.scrollable_frame)
+
+def sendToB():
+    global schedA
+    global schedB
+    global schedC
+    schedA = BackgroundScheduler()
+    schedB = BackgroundScheduler()
+    schedC = BackgroundScheduler()
+
+    command = commandSend.get()
+    commandSend.set("")
+    ttk.Label(outputB.scrollable_frame, text = "Command: " + command + "_B", width = 20).pack(side = TOP)
+
+    if(repeatStatusB == "ON"):
+        #sendRepeat(2, command, outputA)
+        schedB.add_job(lambda: sendCommand(command, outputB, serialB), 'interval', seconds = repeatIntervalInt)
+        schedB.start()
+
+    serialB.write(command + "_B" + '\r\n')
+    out = ''
+    # let's wait one second before reading output (let's give device time to answer)
+    time.sleep(1)
+    while serialB.inWaiting() > 0:
+        out += serialB.read(1)
+    if out != '':
+        writeOutput(out, outputB.scrollable_frame)
+
+def sendToC():
+    global schedA
+    global schedB
+    global schedC
+    schedA = BackgroundScheduler()
+    schedB = BackgroundScheduler()
+    schedC = BackgroundScheduler()
+
+
+    command = commandSend.get()
+    commandSend.set("")
+    ttk.Label(outputC.scrollable_frame, text = "Command: " + command + "_C", width = 20).pack(side = TOP)
+
+    if(repeatStatusC == "ON"):
+        #sendRepeat(2, command, outputA)
+        schedC.add_job(lambda: sendCommand(command, outputC, serialC), 'interval', seconds = repeatIntervalInt)
+        schedC.start()
+
+    serialC.write(command + "_C" + '\r\n')
+    out = ''
+    # let's wait one second before reading output (let's give device time to answer)
+    time.sleep(1)
+    while serialC.inWaiting() > 0:
+        out += serialC.read(1)
+    if out != '':
+        writeOutput(out, outputC.scrollable_frame)
+
+def actuallyChangeRepeatStatus(repeatStatus, outputLetter):
+    global repeatStatusA
+    global repeatStatusB
+    global repeatStatusC
+    if (outputLetter == 'A'):
+        repeatStatusA = repeatStatus
+    if (outputLetter == 'B'):
+        repeatStatusB = repeatStatus
+    if (outputLetter == 'C'):
+        repeatStatusC = repeatStatus
+
+def repeatChange(repeatStatus, repeatButton, frame, outputLetter):
+    if (repeatStatus == "ON"):
+        repeatStatus = "OFF"
+    else:
+        repeatStatus = "ON"
+    actuallyChangeRepeatStatus(repeatStatus, outputLetter)
+    repeatButton.destroy()
+    repeatButton = Button(frame, text = "Repeat: " + repeatStatus, command=lambda : repeatChange(repeatStatus, repeatButton, frame, outputLetter), width = 10)
+    repeatButton.pack(side = TOP)
+
+def outputSetup():
+    global serialA
+    global serialB
+    global serialC
+    serialA = serial.Serial()
+    serialB = serial.Serial()
+    serialC = serial.Serial()
+
+    global outputA
+    global outputB
+    global outputC
+    global repeatStatusA
+    global repeatStatusB
+    global repeatStatusC
+    repeatStatusA = "OFF"
+    repeatStatusB = "OFF"
+    repeatStatusC = "OFF"
+
+    repeatButtonA = Button(frameA, text = "Repeat: " + repeatStatusA, command=lambda : repeatChange(repeatStatusA, repeatButtonA, frameA, 'A'), width = 10)
+    repeatButtonA.pack(side = TOP)
+    outputA = ScrollableFrame(frameA)
+    outputA.pack(side = BOTTOM)
+    Button(frameA, text = "Configure", width = 20, command=lambda : configureSerial(serialA)).pack(side=BOTTOM)
+
+    repeatButtonB = Button(frameB, text = "Repeat: " + repeatStatusB, command=lambda : repeatChange(repeatStatusB, repeatButtonB, frameB, 'B'), width = 10)
+    repeatButtonB.pack(side = TOP)
+    outputB = ScrollableFrame(frameB)
+    outputB.pack(side = BOTTOM)
+    Button(frameB, text = "Configure", width = 20, command=lambda : configureSerial(serialB)).pack(side=BOTTOM)
+
+    repeatButtonC = Button(frameC, text = "Repeat: " + repeatStatusC, command=lambda : repeatChange(repeatStatusC, repeatButtonC, frameC, 'C'), width = 10)
+    repeatButtonC.pack(side = TOP)
+    outputC = ScrollableFrame(frameC)
+    outputC.pack(side = BOTTOM)
+    Button(frameC, text = "Configure", width = 20, command=lambda : configureSerial(serialC)).pack(side=BOTTOM)
+
+def mainScreen():
+    global mainScreen
+    mainScreen = Tk()
+    mainScreen.geometry("1000x600")
+    mainScreen.title("Schneider 1.0")
     Label(text = "Schneider 1.0", bg = "grey", width = "600", height = "2", font = ("Calibri", 13)).pack()
     Label(text = "").pack()
 
-    global command_send
-    global command_entry
-    command_send = StringVar()
-    command_entry = StringVar()
-    Label(screen, text = "Command").pack()
-    command_entry = Entry(screen, textvariable = command_send)
-    command_entry.pack()
+    global commandSend
+    global commandEntry
+    commandSend = StringVar()
+    commandEntry = StringVar()
+    Label(mainScreen, text = "Command").pack()
+    commandEntry = Entry(mainScreen, textvariable = commandSend)
+    commandEntry.pack()
     Label(text = "").pack()
+    Button(mainScreen, text="Send to All", width = 10, height = 1, command = sendToAll).pack()
 
-    #Command Button
-    Button(screen, text="Send to All", width = 10, height = 1, command = send_to_all).pack()
-    Label(text = "").pack()
+    frameThatHoldsSendButtons = Frame(mainScreen)
+    frameThatHoldsSendButtons.pack()
+    Button(frameThatHoldsSendButtons, text="Send to A", width = 10, height = 1, command = sendToA).pack(side = LEFT)
+    Button(frameThatHoldsSendButtons, text="Send to B", width = 10, height = 1, command = sendToB).pack(side = LEFT)
+    Button(frameThatHoldsSendButtons, text="Send to C", width = 10, height = 1, command = sendToC).pack(side = LEFT)
 
-    global frame
-    global frame1
-    global frame2
-    global frame3
-    global frame4
-    frame = Frame(screen)
-    frame.pack()
-    frame1 = Frame(screen)
-    frame1.pack()
-    frame2 = Frame(screen)
-    frame2.pack()
-    frame3 = Frame(screen)
-    frame3.pack()
-    configureButtonFrame = Frame(screen)
-    frame4 = Frame(screen)
-    frame4.pack()
+    global frameA
+    global frameB
+    global frameC
 
-    firstLabel = Label(frame, text = "Awaiting Command")
-    firstLabel.pack()
+    frameA = Frame(mainScreen)
+    frameB = Frame(mainScreen)
+    frameC = Frame(mainScreen)
+    frameA.pack(side = LEFT)
+    frameB.pack(side = LEFT)
+    frameC.pack(side = LEFT)
 
     outputSetup()
-    screen.mainloop()
+    mainScreen.mainloop()
 
-main_screen()
+global repeatIntervalInt
+repeatIntervalInt = 1
+mainScreen()
